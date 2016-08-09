@@ -1,20 +1,182 @@
 <!DOCTYPE html>
 
 <html>
+
 <head>
 	<meta charset="utf-8">
 	<title>Test d3js</title>
-	<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+	<script type="text/javascript" src="http://d3js.org/d3.v4.js"></script>
+	<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=amy5lBMjH4C0AM6WtKAeEEXU"></script>
 </head>
 <style>
+	html, body {
+		height: 100%;
+		width: 100%;
+	}
+	.axis--x path {
+	  display: none;
+	}
+	.line {
+	  fill: none;
+	  stroke: steelblue;
+	  stroke-width: 1.5px;
+	}
 </style>
-<body>
 
+<body>
 <!--
-	<script type="text/javascript" src="display map.js">
-	</script>
+	<script type="text/javascript" src="display map.js"></script>
 -->
+	<button onclick="newData()"></button>
+	<div style="width: 90%; height: 1%; border: 1px solid gray; margin-top:5px; margin-left:5%; margin-right:5%;" id="mapDisplay"></div>
+	<svg style="width: 80%; height: 15%; margin-top:10px; margin-left:10%; margin-right:10%" id="lineDisplay"></svg>
+
 	<script type="text/javascript">
+		var offsetX = 0;
+		var offsetY = 0;
+		function newData() {
+			offsetX += step;
+			//offsetY += random();
+			redRaw();
+		}
+	</script>
+
+	<!--baidu map api display-->
+	<script type="text/javascript">
+		//	location information for the stations(see email)
+		var stations = [[116.3937667872, 39.9860711115], 
+						[116.4113647614, 39.8814267903], 
+						[116.3634704697, 39.9319472813],
+						[116.3681709994, 39.8797703107],
+						[116.2499073668, 40.2089012175],
+						[116.6351760260, 40.3272619492]];
+		var map = new BMap.Map("mapDisplay");
+		var point = new BMap.Point(116.40364273508333, 40.03589644341667);
+		map.centerAndZoom(point, 10);
+		//	simple marker
+		for (var i = 0; i < stations.length; i++) {
+			map.addOverlay(new BMap.Marker(new BMap.Point(stations[i][0], stations[i][1])));
+		}
+		//	todo, add heat map, and dynamic change
+	</script>
+
+	<!--line demo, use d3-->
+	<script type="text/javascript">
+		//	change svg size
+		var temp = null;
+		var tp = null;
+		var svg = d3.select("body").append("svg").attr("width", 960).attr("height", 100);
+			margin = {top: 20, right: 80, bottom: 30, left: 50},
+			width = svg.attr("width") - margin.left - margin.right,
+    		height = svg.attr("height") - margin.top - margin.bottom,
+			g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+		g.append("defs").append("clipPath")
+			.attr("id", "clipPath")
+			.append("rect")
+				.attr("width", width)
+				.attr("height", height);
+		//	function to parse time
+		var parseTime = d3.timeParse("%Y%m%d");
+
+		var x = d3.scaleTime().range([0, width]),
+		    y = d3.scaleLinear().range([height, 0]),
+		    z = d3.scaleOrdinal(d3.schemeCategory10);
+
+		var line = d3.line()
+		    	.curve(d3.curveBasis)
+		    	.x(function(d) { return x(d.date) + offsetX; })
+		    	.y(function(d) { return y(d.temperature); });
+
+			var step = -2.2739726027397262;
+
+		d3.tsv("data.tsv", type, function(error, data) {
+			if (error) throw error;
+
+		 	var cities = data.columns.slice(1).map(function(id) {
+		    	return {
+		      		id: id,
+		      		values: data.map(function(d) {
+		        		return {date: d.date, temperature: d[id]};
+		      		})
+		   		};
+  			});
+		  	x.domain(d3.extent(data, function(d) { return d.date; }));
+			y.domain([
+				d3.min(cities, function(c) { return d3.min(c.values, function(d) { return d.temperature; }); }),
+				d3.max(cities, function(c) { return d3.max(c.values, function(d) { return d.temperature; }); })
+			]);
+			z.domain(cities.map(function(c) { return c.id; }));
+
+			var axisX = d3.axisBottom(x);
+			var axisY = d3.axisLeft(y);
+			axisY.ticks(3);
+
+			g.append("g")
+			    .attr("class", "axis axis--x")
+			    .attr("transform", "translate(0," + height + ")")
+			    .call(axisX);
+			g.append("g")
+			    .attr("class", "axis axis--y")
+			    .call(axisY)
+			    .append("text")
+				    .attr("transform", "rotate(-90)")
+				    .attr("y", 6)
+				    .attr("dy", "0.71em")
+				    .attr("fill", "#000");
+				    //.text("Temperature, ºF");
+		console.log(cities);
+		var city = g.selectAll(".city")
+		    .data(cities)
+		    .enter().append("g")
+		    	.attr("class", "city")
+		    	.attr("clip-path", "url(#clipPath)");
+		var path = city.append("path")
+		    	.attr("class", "line")
+		    	.attr("d", function(d) { return line(d.values); })
+		    	.style("stroke", function(d) { return z(d.id); });
+		temp = cities;
+		tp = path;
+		});
+
+		//	data adapter
+		function type(d, _, columns) {
+		  d.date = parseTime(d.date);
+		  for (var i = 1, n = columns.length, c; i < n; ++i) d[c = columns[i]] = +d[c];
+		  return d;
+		}
+
+		function redRaw() {
+			for (var i = 0; i < 3; i++)
+			{
+				var newDate = new Date();
+				newDate.setDate(temp[i].values[temp[i].values.length - 1].date.getDate() + 1);
+				var newObject = {date: newDate, temperature: Math.random() * 50};
+				temp[i].values.push(newObject);
+				console.log(temp[i].values[0]);
+				console.log(newObject);
+				temp[i].values.shift();
+			}
+			var newCity = g.selectAll(".city")
+			    .data(temp)
+			    .enter().append("g")
+			    	.attr("class", "city")
+			    	.attr("clip-path", "url(#clipPath)");
+			newCity.append("path")
+			    	.attr("class", "line")
+			    	.attr("d", function(d) { return line(d.values); })
+			    	.style("stroke", function(d) { return z(d.id); })
+			    	.merge(tp);
+			tp.exit().remove();
+			var stepDate = x.domain()[0];
+			stepDate.setDate(stepDate.getDate() + 1);
+			//console.log(step);
+			tp.attr("transform", null)
+				.transition()
+				.duration(150)
+				.attr("d", function(d) { return line(d.values); })
+				.attr("transform", "translate(" + step + ")");
+		}
+		//d3.interval(newData, 150);
 	</script>
 </body>
 </html>

@@ -10,7 +10,7 @@ var projection = d3.geo.mercator()
 	.scale(700)
 	.translate([width/2, height/2]);
 var path = d3.geo.path().projection(projection);
-var color = d3.scale.category20();
+var color = d3.scale.category20c();
 d3.json("china.json", function(error, root) {
 	if (error) return console.error(error);
 	console.log(root.features);
