@@ -31,18 +31,16 @@
 	<div style="width: 90%; height: 80%; border: 1px solid gray; margin-top:5px; margin-left:5%; margin-right:5%;" id="mapDisplay"></div>
 	<script type="text/javascript">
 		var offsetX = 0;
-		var offsetY = 0;
 		function newData() {
 			offsetX += step;
-			//offsetY += random();
 			redRaw();
 		}
 	</script>
 
 	<!--baidu map api display-->
 	<script type="text/javascript">
-		//	location information for the stations(see email)
-		var stations = [[116.3937667872, 39.9860711115], 
+		//	location information for the station location(see email)
+		var stationLocation = [[116.3937667872, 39.9860711115], 
 						[116.4113647614, 39.8814267903], 
 						[116.3634704697, 39.9319472813],
 						[116.3681709994, 39.8797703107],
@@ -51,9 +49,20 @@
 		var map = new BMap.Map("mapDisplay");
 		var point = new BMap.Point(116.40364273508333, 40.03589644341667);
 		map.centerAndZoom(point, 10);
+		map.enableScrollWheelZoom(true);
 		//	simple marker
-		for (var i = 0; i < stations.length; i++) {
-			map.addOverlay(new BMap.Marker(new BMap.Point(stations[i][0], stations[i][1])));
+		var stations = [];
+		for (var i = 0; i < stationLocation.length; i++) {
+			var marker = new BMap.Marker(new BMap.Point(stationLocation[i][0], stationLocation[i][1]));
+			marker.addEventListener("click", function(e) {
+				for (i = 0; i < stations.length; i++) {
+					if (stations[i] == e.target) {
+						//	todo, refresh with station id
+					}
+				}
+			});
+			map.addOverlay(marker);
+			stations.push(marker);
 		}
 		//	todo, add heat map, and dynamic change
 	</script>
@@ -85,7 +94,7 @@
 		    	.x(function(d) { return x(d.date) + offsetX; })
 		    	.y(function(d) { return y(d.temperature); });
 
-			var step = -2.2739726027397262;
+		var step = 0;
 
 		var newDate = new Date();
 
@@ -139,7 +148,7 @@
 			console.log(temp[0].values[temp[0].values.length - 1].date);
 			newDate = new Date(temp[0].values[temp[0].values.length - 1].date.getTime() + (24 * 60 * 60 * 1000));
 			console.log(newDate);
-			d3.interval(newData, 150);
+			//d3.interval(newData, 150);
 		});
 
 		//	data adapter
