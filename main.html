@@ -28,9 +28,7 @@
 	<script type="text/javascript" src="display map.js"></script>
 -->
 	<button onclick="newData()"></button>
-	<div style="width: 90%; height: 1%; border: 1px solid gray; margin-top:5px; margin-left:5%; margin-right:5%;" id="mapDisplay"></div>
-	<svg style="width: 80%; height: 15%; margin-top:10px; margin-left:10%; margin-right:10%" id="lineDisplay"></svg>
-
+	<div style="width: 90%; height: 80%; border: 1px solid gray; margin-top:5px; margin-left:5%; margin-right:5%;" id="mapDisplay"></div>
 	<script type="text/javascript">
 		var offsetX = 0;
 		var offsetY = 0;
@@ -89,6 +87,8 @@
 
 			var step = -2.2739726027397262;
 
+		var newDate = new Date();
+
 		d3.tsv("data.tsv", type, function(error, data) {
 			if (error) throw error;
 
@@ -124,18 +124,22 @@
 				    .attr("dy", "0.71em")
 				    .attr("fill", "#000");
 				    //.text("Temperature, ºF");
-		console.log(cities);
-		var city = g.selectAll(".city")
-		    .data(cities)
-		    .enter().append("g")
-		    	.attr("class", "city")
-		    	.attr("clip-path", "url(#clipPath)");
-		var path = city.append("path")
-		    	.attr("class", "line")
-		    	.attr("d", function(d) { return line(d.values); })
-		    	.style("stroke", function(d) { return z(d.id); });
-		temp = cities;
-		tp = path;
+			console.log(cities);
+			var city = g.selectAll(".city")
+			    .data(cities)
+			    .enter().append("g")
+			    	.attr("class", "city")
+			    	.attr("clip-path", "url(#clipPath)");
+			var path = city.append("path")
+			    	.attr("class", "line")
+			    	.attr("d", function(d) { return line(d.values); })
+			    	.style("stroke", function(d) { return z(d.id); });
+			temp = cities;
+			tp = path;
+			console.log(temp[0].values[temp[0].values.length - 1].date);
+			newDate = new Date(temp[0].values[temp[0].values.length - 1].date.getTime() + (24 * 60 * 60 * 1000));
+			console.log(newDate);
+			d3.interval(newData, 150);
 		});
 
 		//	data adapter
@@ -146,16 +150,15 @@
 		}
 
 		function redRaw() {
+			step = -x(new Date(temp[0].values[0].date.getTime() + (24 * 60 * 60 * 1000))) + x(temp[0].values[0].date);
+			newDate = new Date(newDate.getTime() + (24 * 60 * 60 * 1000));
 			for (var i = 0; i < 3; i++)
 			{
-				var newDate = new Date();
-				newDate.setDate(temp[i].values[temp[i].values.length - 1].date.getDate() + 1);
-				var newObject = {date: newDate, temperature: Math.random() * 50};
+				var newObject = {date: newDate, temperature: Math.random() * 50+10};
 				temp[i].values.push(newObject);
-				console.log(temp[i].values[0]);
-				console.log(newObject);
 				temp[i].values.shift();
 			}
+			console.log(newDate);
 			var newCity = g.selectAll(".city")
 			    .data(temp)
 			    .enter().append("g")
@@ -167,16 +170,11 @@
 			    	.style("stroke", function(d) { return z(d.id); })
 			    	.merge(tp);
 			tp.exit().remove();
-			var stepDate = x.domain()[0];
-			stepDate.setDate(stepDate.getDate() + 1);
-			//console.log(step);
-			tp.attr("transform", null)
+			tp.attr("d", function(d) { return line(d.values); })
 				.transition()
 				.duration(150)
-				.attr("d", function(d) { return line(d.values); })
 				.attr("transform", "translate(" + step + ")");
 		}
-		//d3.interval(newData, 150);
 	</script>
 </body>
 </html>
