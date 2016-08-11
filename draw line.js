@@ -40,10 +40,16 @@ var oneStep = 24 * 60 * 60 * 1000;
 var step = 0;
 var stepX = 0;
 var newDate = new Date();
+var timer = null;
 
 function redRawLine(i) {
 	console.log("RedRaw the " + i + "line.");
+	//	HERE, change the data.tsv to some station-related url
 	d3.tsv("data.tsv", type, function(error, data) {
+		if (timer != null) {
+			offsetX = 0;
+			timer.stop();
+		}
 		if (error) throw error;
 
 	  	x.domain(d3.extent(data, function(d) { return d.date; }));
@@ -103,7 +109,7 @@ function redRawLine(i) {
 	    	.style("stroke", function(d) { return col(2); });
 		globalData = data;
 		newDate = globalData[globalData.length - 1].date;
-		d3.interval(go, duration);
+		timer = d3.interval(go, duration);
 	});
 
 	//	data for tsv->object
