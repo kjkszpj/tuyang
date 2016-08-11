@@ -22,6 +22,7 @@ g.append("defs").append("clipPath")
 //	function to parse time
 var parseTime = d3.timeParse("%Y%m%d");
 var x = d3.scaleTime().range([0, width]),
+	xzhou = d3.scaleTime().range([0, width]),
     y1 = d3.scaleLinear().range([height, 0]),
     y2 = d3.scaleLinear().range([height, 0]),
     col = d3.scaleOrdinal(d3.schemeCategory10);
@@ -51,7 +52,6 @@ function redRawLine(i) {
 			timer.stop();
 		}
 		if (error) throw error;
-
 	  	x.domain(d3.extent(data, function(d) { return d.date; }));
 		y1.domain(d3.extent(data, function(d) { return d.aqi; }));
 		y2.domain(d3.extent(data, function(d) { return d.emotion; }));
@@ -66,12 +66,11 @@ function redRawLine(i) {
 		g.selectAll("g").remove();
 
 		//	draw the axis
-		/*
-		g.append("g")
+		
+		axisX = g.append("g")
 		    .attr("class", "axisX")
 		    .attr("transform", "translate(0," + height + ")")
 		    .call(axisX);
-		    */
 		g.append("g")
 		    .attr("class", "axisY1")
 		    .call(axisY1)
@@ -124,6 +123,9 @@ function redRawLine(i) {
 redRawLine(1);
 
 function updateLine() {
+	xzhou.domain(d3.extent(globalData, function(d) { return d.date; }));
+	g.select(".axisX")
+		.call(d3.axisBottom(xzhou));
 	stepX = -x(new Date(globalData[0].date.getTime() + oneStep)) + x(globalData[0].date);
 	newDate = new Date(newDate.getTime() + oneStep);
 	//	HERE: replace random() with the get data thing
