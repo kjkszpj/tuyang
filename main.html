@@ -1,10 +1,16 @@
+<!--
+	0.	clean up code
+	1.	data adapter
+	2.	dynamic axis-X
+	3.	map demo
+-->
 <!DOCTYPE html>
 
 <html>
 
 <head>
 	<meta charset="utf-8">
-	<title>Test d3js</title>
+	<title>标题还没取</title>
 	<script type="text/javascript" src="http://d3js.org/d3.v4.js"></script>
 	<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=amy5lBMjH4C0AM6WtKAeEEXU"></script>
 </head>
@@ -27,163 +33,24 @@
 <!--
 	<script type="text/javascript" src="display map.js"></script>
 -->
-	<button onclick="newData()"></button>
-	<div style="width: 90%; height: 80%; border: 1px solid gray; margin-top:5px; margin-left:5%; margin-right:5%;" id="mapDisplay"></div>
+	<!--should remove this element in final demo-->
+	<button onclick="go()">debug</button>
+
+	<div style="width: 90%; height: 80%; border: 1px solid gray; margin-top:10px; margin-left:5%; margin-right:5%;" id="mapDisplay"></div>
+	<svg width="960" height="100" id="lineDisplay"></svg>
+
 	<script type="text/javascript">
 		var offsetX = 0;
-		function newData() {
-			offsetX += step;
-			redRaw();
+		function go() {
+			offsetX += stepX;
+			updateLine();
 		}
 	</script>
 
 	<!--baidu map api display-->
-	<script type="text/javascript">
-		//	location information for the station location(see email)
-		var stationLocation = [[116.3937667872, 39.9860711115], 
-						[116.4113647614, 39.8814267903], 
-						[116.3634704697, 39.9319472813],
-						[116.3681709994, 39.8797703107],
-						[116.2499073668, 40.2089012175],
-						[116.6351760260, 40.3272619492]];
-		var map = new BMap.Map("mapDisplay");
-		var point = new BMap.Point(116.40364273508333, 40.03589644341667);
-		map.centerAndZoom(point, 10);
-		map.enableScrollWheelZoom(true);
-		//	simple marker
-		var stations = [];
-		for (var i = 0; i < stationLocation.length; i++) {
-			var marker = new BMap.Marker(new BMap.Point(stationLocation[i][0], stationLocation[i][1]));
-			marker.addEventListener("click", function(e) {
-				for (i = 0; i < stations.length; i++) {
-					if (stations[i] == e.target) {
-						//	todo, refresh with station id
-					}
-				}
-			});
-			map.addOverlay(marker);
-			stations.push(marker);
-		}
-		//	todo, add heat map, and dynamic change
-	</script>
+	<script type="text/javascript" src="draw map.js"></script>
 
 	<!--line demo, use d3-->
-	<script type="text/javascript">
-		//	change svg size
-		var temp = null;
-		var tp = null;
-		var svg = d3.select("body").append("svg").attr("width", 960).attr("height", 100);
-			margin = {top: 20, right: 80, bottom: 30, left: 50},
-			width = svg.attr("width") - margin.left - margin.right,
-    		height = svg.attr("height") - margin.top - margin.bottom,
-			g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-		g.append("defs").append("clipPath")
-			.attr("id", "clipPath")
-			.append("rect")
-				.attr("width", width)
-				.attr("height", height);
-		//	function to parse time
-		var parseTime = d3.timeParse("%Y%m%d");
-
-		var x = d3.scaleTime().range([0, width]),
-		    y = d3.scaleLinear().range([height, 0]),
-		    z = d3.scaleOrdinal(d3.schemeCategory10);
-
-		var line = d3.line()
-		    	.curve(d3.curveBasis)
-		    	.x(function(d) { return x(d.date) + offsetX; })
-		    	.y(function(d) { return y(d.temperature); });
-
-		var step = 0;
-
-		var newDate = new Date();
-
-		d3.tsv("data.tsv", type, function(error, data) {
-			if (error) throw error;
-
-		 	var cities = data.columns.slice(1).map(function(id) {
-		    	return {
-		      		id: id,
-		      		values: data.map(function(d) {
-		        		return {date: d.date, temperature: d[id]};
-		      		})
-		   		};
-  			});
-		  	x.domain(d3.extent(data, function(d) { return d.date; }));
-			y.domain([
-				d3.min(cities, function(c) { return d3.min(c.values, function(d) { return d.temperature; }); }),
-				d3.max(cities, function(c) { return d3.max(c.values, function(d) { return d.temperature; }); })
-			]);
-			z.domain(cities.map(function(c) { return c.id; }));
-
-			var axisX = d3.axisBottom(x);
-			var axisY = d3.axisLeft(y);
-			axisY.ticks(3);
-
-			g.append("g")
-			    .attr("class", "axis axis--x")
-			    .attr("transform", "translate(0," + height + ")")
-			    .call(axisX);
-			g.append("g")
-			    .attr("class", "axis axis--y")
-			    .call(axisY)
-			    .append("text")
-				    .attr("transform", "rotate(-90)")
-				    .attr("y", 6)
-				    .attr("dy", "0.71em")
-				    .attr("fill", "#000");
-				    //.text("Temperature, ºF");
-			console.log(cities);
-			var city = g.selectAll(".city")
-			    .data(cities)
-			    .enter().append("g")
-			    	.attr("class", "city")
-			    	.attr("clip-path", "url(#clipPath)");
-			var path = city.append("path")
-			    	.attr("class", "line")
-			    	.attr("d", function(d) { return line(d.values); })
-			    	.style("stroke", function(d) { return z(d.id); });
-			temp = cities;
-			tp = path;
-			console.log(temp[0].values[temp[0].values.length - 1].date);
-			newDate = new Date(temp[0].values[temp[0].values.length - 1].date.getTime() + (24 * 60 * 60 * 1000));
-			console.log(newDate);
-			//d3.interval(newData, 150);
-		});
-
-		//	data adapter
-		function type(d, _, columns) {
-		  d.date = parseTime(d.date);
-		  for (var i = 1, n = columns.length, c; i < n; ++i) d[c = columns[i]] = +d[c];
-		  return d;
-		}
-
-		function redRaw() {
-			step = -x(new Date(temp[0].values[0].date.getTime() + (24 * 60 * 60 * 1000))) + x(temp[0].values[0].date);
-			newDate = new Date(newDate.getTime() + (24 * 60 * 60 * 1000));
-			for (var i = 0; i < 3; i++)
-			{
-				var newObject = {date: newDate, temperature: Math.random() * 50+10};
-				temp[i].values.push(newObject);
-				temp[i].values.shift();
-			}
-			console.log(newDate);
-			var newCity = g.selectAll(".city")
-			    .data(temp)
-			    .enter().append("g")
-			    	.attr("class", "city")
-			    	.attr("clip-path", "url(#clipPath)");
-			newCity.append("path")
-			    	.attr("class", "line")
-			    	.attr("d", function(d) { return line(d.values); })
-			    	.style("stroke", function(d) { return z(d.id); })
-			    	.merge(tp);
-			tp.exit().remove();
-			tp.attr("d", function(d) { return line(d.values); })
-				.transition()
-				.duration(150)
-				.attr("transform", "translate(" + step + ")");
-		}
-	</script>
+	<script type="text/javascript" src="draw line.js"></script>
 </body>
 </html>
