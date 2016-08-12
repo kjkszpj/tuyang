@@ -35,6 +35,8 @@
 -->
 	<!--should remove this element in final demo-->
 	<button onclick="go()">debug</button>
+	<button onclick="start()" id="start">start</button>
+	<button onclick="stop()" id="stop">stop</button>
 
 	<div style="width: 90%; height: 80%; border: 1px solid gray; margin-top:10px; margin-left:5%; margin-right:5%;" id="mapDisplay"></div>
 	<svg width="960" height="100" id="lineDisplay"></svg>
@@ -44,6 +46,12 @@
 		function go() {
 			offsetX += stepX;
 			updateLine();
+		}
+		function start() {
+			timer = d3.interval(go, duration);
+		}
+		function stop() {
+			timer.stop();
 		}
 	</script>
 
