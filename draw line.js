@@ -20,7 +20,7 @@ g.append("defs").append("clipPath")
 
 //	init some related function
 //	function to parse time
-var parseTime = d3.timeParse("%Y%m%d");
+var parseTime = d3.timeParse("%Y-%m-%dT%H:%M:%SZ");
 var x = d3.scaleTime().range([0, width]),
 	xzhou = d3.scaleTime().range([0, width]),
     y1 = d3.scaleLinear().range([height, 0]),
